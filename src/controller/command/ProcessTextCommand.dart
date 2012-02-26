@@ -7,16 +7,17 @@ class ProcessTextCommand extends MVCSimpleCommand
     
     // Process the text
     List chars = text.splitChars();
-    StringBuffer reverse = new StringBuffer();
+    StringBuffer buffer = new StringBuffer();
     while (chars.length>0) {
-      reverse.add(chars.removeLast());
+      buffer.add(chars.removeLast());
     }
+    String reverse = buffer.toString();
     
     // Get the TextProxy
     TextProxy proxy = facade.retrieveProxy( TextProxy.NAME );
 
     // Set the updated text on the TextProxy      
-    proxy.text = reverse.toString();
+    proxy.text = reverse;
     
     // If reversed text is the same as forward text, 
     // send notification that a palindrome was detected
