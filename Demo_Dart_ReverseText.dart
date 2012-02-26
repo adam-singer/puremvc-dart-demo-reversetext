@@ -1,5 +1,4 @@
 // DART DOM Library
-//#import('dart:html');
 #import('dart:dom');
 
 // PureMVC Framework for Dart (must also be in your workspace!)
