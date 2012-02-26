@@ -1,11 +1,9 @@
-// DART HTML Library
-#import('dart:html');
+// DART DOM Library
+//#import('dart:html');
+#import('dart:dom');
 
 // PureMVC Framework for Dart (must also be in your workspace!)
 #import('../PureMVC_Dart/src/puremvc.dart');
-
-// Application Facade
-#source('src/ApplicationFacade.dart');
 
 // Model Tier
 #source('src/model/proxy/TextProxy.dart');
@@ -13,6 +11,8 @@
 // View Tier
 #source('src/view/component/TextComponent.dart');
 #source('src/view/mediator/TextComponentMediator.dart');
+#source('src/view/event/TextChangedEvent.dart');
+
 
 // Controller Tier
 #source('src/controller/command/StartupCommand.dart');
@@ -24,5 +24,11 @@
 
 void main()
 {
+  // Get a unique multiton Facade instance for the application 
+  IFacade facade = MVCFacade.getInstance( AppConstants.APPNAME );
   
+  // Startup the application's PureMVC core
+  facade.registerCommand( AppConstants.STARTUP, () => new StartupCommand() );
+  facade.sendNotification( AppConstants.STARTUP );
+
 }
