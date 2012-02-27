@@ -21,6 +21,6 @@ class ProcessTextCommand extends MVCSimpleCommand
     
     // If reversed text is the same as forward text, 
     // send notification that a palindrome was detected
-    if ( reverse == text && text != "" ) this.sendNotification( AppConstants.PALINDROME );
+    if ( reverse == text && text != "" ) this.sendNotification( AppNotes.PALINDROME );
   }
 }

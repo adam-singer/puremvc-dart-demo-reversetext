@@ -14,13 +14,13 @@ class TextComponentMediator extends MVCMediator
   void onRegister()
   {
     // set listeners on text component
-    textComponent.addEventListener( TextComponent.INPUT_TEXT_CHANGED, handleEvent );
+    textComponent.addEventListener( AppEvents.INPUT_TEXT_CHANGED, handleEvent );
   }
   
   // Also called when Mediator is registered 
   List<String> listNotificationInterests()
   {
-    return [ AppConstants.PALINDROME, 
+    return [ AppNotes.PALINDROME, 
              TextProxy.TEXT_CHANGED ];    
   }
   
@@ -29,8 +29,8 @@ class TextComponentMediator extends MVCMediator
   {
     switch (event.type)
     {
-      case TextComponent.INPUT_TEXT_CHANGED:
-        sendNotification( AppConstants.PROCESS, textComponent.inputText );
+      case AppEvents.INPUT_TEXT_CHANGED:
+        sendNotification( AppNotes.PROCESS, textComponent.inputText );
         break;
     }
   }
@@ -44,7 +44,7 @@ class TextComponentMediator extends MVCMediator
         textComponent.outputText = note.body;
         break;
   
-      case AppConstants.PALINDROME:
+      case AppNotes.PALINDROME:
         textComponent.isPalindrome = true;
         break;
     }  

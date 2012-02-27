@@ -2079,6 +2079,7 @@ function TextComponent() {
   this.reverseButton = this.textForm.querySelector("button[type=submit]");
   this.checkbox.addEventListener("change", $wrap_call$1(this.get$handleEvent()));
   this.reverseButton.addEventListener("click", $wrap_call$1(this.get$handleEvent()));
+  this.textInput.addEventListener("keyup", $wrap_call$1(this.get$handleEvent()));
 }
 TextComponent.prototype.get$inputText = function() {
   return this.textInput.value;
@@ -2087,19 +2088,13 @@ TextComponent.prototype.handleEvent = function(event) {
   switch (event.type) {
     case "keyup":
 
-      this.dispatchTextChangedEvent();
+      if (this.checkbox.checked) this.dispatchTextChangedEvent();
       break;
 
     case "click":
 
       event.preventDefault();
       this.dispatchTextChangedEvent();
-      break;
-
-    case "change":
-
-      if (this.checkbox.checked) this.textInput.addEventListener("keyup", $wrap_call$1(this.get$handleEvent()));
-      else this.textInput.removeEventListener("keyup", $wrap_call$1(this.get$handleEvent()));
       break;
 
   }
@@ -2112,7 +2107,7 @@ TextComponent.prototype.addEventListener = function(type, listener) {
 }
 TextComponent.prototype.dispatchTextChangedEvent = function() {
   var event = get$document().createEvent("HTMLEvents");
-  event.initEvent($globals.TextComponent_INPUT_TEXT_CHANGED, true, true);
+  event.initEvent("text/changed", true, true);
   this.textForm.dispatchEvent(event);
 }
 TextComponent.prototype.set$isPalindrome = function(izzit) {
@@ -2132,16 +2127,16 @@ TextComponentMediator.prototype.get$textComponent = function() {
   return this.viewComponent;
 }
 TextComponentMediator.prototype.onRegister = function() {
-  this.get$textComponent().addEventListener($globals.TextComponent_INPUT_TEXT_CHANGED, $wrap_call$1(this.get$handleEvent()));
+  this.get$textComponent().addEventListener("text/changed", $wrap_call$1(this.get$handleEvent()));
 }
 TextComponentMediator.prototype.listNotificationInterests = function() {
-  return [$globals.AppConstants_PALINDROME, $globals.TextProxy_TEXT_CHANGED];
+  return ["palindrome/detected", $globals.TextProxy_TEXT_CHANGED];
 }
 TextComponentMediator.prototype.handleEvent = function(event) {
   switch (event.type) {
-    case $globals.TextComponent_INPUT_TEXT_CHANGED:
+    case "text/changed":
 
-      this.sendNotification($globals.AppConstants_PROCESS, this.get$textComponent().get$inputText());
+      this.sendNotification("process/input/text", this.get$textComponent().get$inputText());
       break;
 
   }
@@ -2156,7 +2151,7 @@ TextComponentMediator.prototype.handleNotification = function(note) {
       this.get$textComponent().set$outputText(note.body);
       break;
 
-    case $globals.AppConstants_PALINDROME:
+    case "palindrome/detected":
 
       this.get$textComponent().set$isPalindrome(true);
       break;
@@ -2166,6 +2161,8 @@ TextComponentMediator.prototype.handleNotification = function(note) {
 TextComponentMediator.prototype.get$handleNotification = function() {
   return this.handleNotification.bind(this);
 }
+// ********** Code for AppEvents **************
+function AppEvents() {}
 // ********** Code for StartupCommand **************
 $inherits(StartupCommand, MVCMacroCommand);
 function StartupCommand() {
@@ -2199,7 +2196,7 @@ function PrepareControllerCommand() {
   MVCSimpleCommand.call(this);
 }
 PrepareControllerCommand.prototype.execute = function(note) {
-  this.get$facade().registerCommand($globals.AppConstants_PROCESS, (function () {
+  this.get$facade().registerCommand("process/input/text", (function () {
     return new ProcessTextCommand();
   })
   );
@@ -2227,18 +2224,18 @@ ProcessTextCommand.prototype.execute = function(note) {
   var reverse = buffer.toString();
   var proxy = this.get$facade().retrieveProxy($globals.TextProxy_NAME);
   proxy.set$text(reverse);
-  if (reverse == text && text != "") this.sendNotification($globals.AppConstants_PALINDROME);
+  if (reverse == text && text != "") this.sendNotification("palindrome/detected");
 }
-// ********** Code for AppConstants **************
-function AppConstants() {}
+// ********** Code for AppNotes **************
+function AppNotes() {}
 // ********** Code for top level **************
 function main() {
-  var facade = MVCFacade.getInstance($globals.AppConstants_APPNAME);
-  facade.registerCommand($globals.AppConstants_STARTUP, (function () {
+  var facade = MVCFacade.getInstance("ReverseText");
+  facade.registerCommand("startup", (function () {
     return new StartupCommand();
   })
   );
-  facade.sendNotification$1($globals.AppConstants_STARTUP);
+  facade.sendNotification$1("startup");
 }
 // 20 dynamic types.
 // 21 types
@@ -2269,13 +2266,8 @@ function $dynamicSetMetadata(inputTable) {
 })();
 //  ********** Globals **************
 function $static_init(){
-  $globals.AppConstants_APPNAME = "ReverseText";
-  $globals.TextComponent_INPUT_TEXT_CHANGED = "inputTextChanged";
   $globals.TextProxy_NAME = "TextProxy";
   $globals.TextComponentMediator_NAME = "TextComponentMediator";
-  $globals.AppConstants_PALINDROME = "palindrome/detected";
-  $globals.AppConstants_PROCESS = "process/input/text";
-  $globals.AppConstants_STARTUP = "startup";
   $globals.TextProxy_TEXT_CHANGED = "text/changed";
 }
 var const$0000 = Object.create(NoMoreElementsException.prototype, {});

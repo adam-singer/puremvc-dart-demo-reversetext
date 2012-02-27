@@ -2,6 +2,6 @@ class PrepareControllerCommand extends MVCSimpleCommand
 {
   void execute( INotification note ) 
   {
-    facade.registerCommand( AppConstants.PROCESS, () => new ProcessTextCommand() );
+    facade.registerCommand( AppNotes.PROCESS, () => new ProcessTextCommand() );
   }
 }
