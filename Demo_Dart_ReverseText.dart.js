@@ -41,7 +41,7 @@ $defProp(Array.prototype, '$setindex', function(index, value) {
   return this[i] = value;
 });
 function $wrap_call$1(fn) { return fn; }
-function $$add$complex(x, y) {
+function $add$complex$(x, y) {
   if (typeof(x) == 'number') {
     $throw(new IllegalArgumentException(y));
   } else if (typeof(x) == 'string') {
@@ -58,11 +58,11 @@ function $$add$complex(x, y) {
   }
 }
 
-function $$add(x, y) {
+function $add$(x, y) {
   if (typeof(x) == 'number' && typeof(y) == 'number') return x + y;
-  return $$add$complex(x, y);
+  return $add$complex$(x, y);
 }
-function $$eq(x, y) {
+function $eq$(x, y) {
   if (x == null) return y == null;
   return (typeof(x) != 'object') ? x === y : x.$eq(y);
 }
@@ -70,7 +70,7 @@ function $$eq(x, y) {
 $defProp(Object.prototype, '$eq', function(other) {
   return this === other;
 });
-function $$lt$complex(x, y) {
+function $lt$complex$(x, y) {
   if (typeof(x) == 'number') {
     $throw(new IllegalArgumentException(y));
   } else if (typeof(x) == 'object') {
@@ -79,15 +79,15 @@ function $$lt$complex(x, y) {
     $throw(new NoSuchMethodException(x, "operator <", [y]));
   }
 }
-function $$lt(x, y) {
+function $lt$(x, y) {
   if (typeof(x) == 'number' && typeof(y) == 'number') return x < y;
-  return $$lt$complex(x, y);
+  return $lt$complex$(x, y);
 }
-function $$ne(x, y) {
+function $ne$(x, y) {
   if (x == null) return y != null;
   return (typeof(x) != 'object') ? x !== y : !x.$eq(y);
 }
-function $$truncdiv(x, y) {
+function $truncdiv$(x, y) {
   if (typeof(x) == 'number') {
     if (typeof(y) == 'number') {
       if (y == 0) $throw(new IntegerDivisionByZeroException());
@@ -102,28 +102,57 @@ function $$truncdiv(x, y) {
     $throw(new NoSuchMethodException(x, "operator ~/", [y]));
   }
 }
-$defProp(Object.prototype, '$typeNameOf', function() {
-  var constructor = this.constructor;
-  if (typeof(constructor) == 'function') {
-    // The constructor isn't null or undefined at this point. Try
-    // to grab hold of its name.
-    var name = constructor.name;
-    // If the name is a non-empty string, we use that as the type
-    // name of this object. On Firefox, we often get 'Object' as
-    // the constructor name even for more specialized objects so
-    // we have to fall through to the toString() based implementation
-    // below in that case.
-    if (name && typeof(name) == 'string' && name != 'Object') return name;
+$defProp(Object.prototype, '$typeNameOf', (function() {
+  function constructorNameWithFallback(obj) {
+    var constructor = obj.constructor;
+    if (typeof(constructor) == 'function') {
+      // The constructor isn't null or undefined at this point. Try
+      // to grab hold of its name.
+      var name = constructor.name;
+      // If the name is a non-empty string, we use that as the type
+      // name of this object. On Firefox, we often get 'Object' as
+      // the constructor name even for more specialized objects so
+      // we have to fall through to the toString() based implementation
+      // below in that case.
+      if (typeof(name) == 'string' && name && name != 'Object') return name;
+    }
+    var string = Object.prototype.toString.call(obj);
+    return string.substring(8, string.length - 1);
   }
-  var string = Object.prototype.toString.call(this);
-  var name = string.substring(8, string.length - 1);
-  if (name == 'Window') {
-    name = 'DOMWindow';
-  } else if (name == 'Document') {
-    name = 'HTMLDocument';
+
+  function chrome$typeNameOf() {
+    var name = this.constructor.name;
+    if (name == 'Window') return 'DOMWindow';
+    return name;
   }
-  return name;
-});
+
+  function firefox$typeNameOf() {
+    var name = constructorNameWithFallback(this);
+    if (name == 'Window') return 'DOMWindow';
+    if (name == 'Document') return 'HTMLDocument';
+    if (name == 'XMLDocument') return 'Document';
+    return name;
+  }
+
+  function ie$typeNameOf() {
+    var name = constructorNameWithFallback(this);
+    if (name == 'Window') return 'DOMWindow';
+    // IE calls both HTML and XML documents 'Document', so we check for the
+    // xmlVersion property, which is the empty string on HTML documents.
+    if (name == 'Document' && this.xmlVersion) return 'Document';
+    if (name == 'Document') return 'HTMLDocument';
+    return name;
+  }
+
+  // If we're not in the browser, we're almost certainly running on v8.
+  if (typeof(navigator) != 'object') return chrome$typeNameOf;
+
+  var userAgent = navigator.userAgent;
+  if (/Chrome|DumpRenderTree/.test(userAgent)) return chrome$typeNameOf;
+  if (/Firefox/.test(userAgent)) return firefox$typeNameOf;
+  if (/MSIE/.test(userAgent)) return ie$typeNameOf;
+  return function() { return constructorNameWithFallback(this); };
+})());
 $defProp(Object.prototype, "get$typeName", Object.prototype.$typeNameOf);
 // ********** Code for Object **************
 $defProp(Object.prototype, "noSuchMethod", function(name, args) {
@@ -173,7 +202,7 @@ NoSuchMethodException.prototype.toString = function() {
     sb.add(this._arguments.$index(i));
   }
   if (null == this._existingArgumentNames) {
-    return $$add($$add(("NoSuchMethodException : method not found: '" + this._functionName + "'\n"), ("Receiver: " + this._receiver + "\n")), ("Arguments: [" + sb + "]"));
+    return $add$($add$(("NoSuchMethodException : method not found: '" + this._functionName + "'\n"), ("Receiver: " + this._receiver + "\n")), ("Arguments: [" + sb + "]"));
   }
   else {
     var actualParameters = sb.toString();
@@ -186,7 +215,7 @@ NoSuchMethodException.prototype.toString = function() {
       sb.add(this._existingArgumentNames.$index(i));
     }
     var formalParameters = sb.toString();
-    return $$add($$add($$add("NoSuchMethodException: incorrect number of arguments passed to ", ("method named '" + this._functionName + "'\nReceiver: " + this._receiver + "\n")), ("Tried calling: " + this._functionName + "(" + actualParameters + ")\n")), ("Found: " + this._functionName + "(" + formalParameters + ")"));
+    return $add$($add$($add$("NoSuchMethodException: incorrect number of arguments passed to ", ("method named '" + this._functionName + "'\nReceiver: " + this._receiver + "\n")), ("Tried calling: " + this._functionName + "(" + actualParameters + ")\n")), ("Found: " + this._functionName + "(" + formalParameters + ")"));
   }
 }
 // ********** Code for ClosureArgumentMismatchException **************
@@ -338,7 +367,7 @@ Collections._emitObject = function(o, result, visiting) {
     }
   }
   else {
-    result.add($$eq(o) ? "null" : o);
+    result.add($eq$(o) ? "null" : o);
   }
 }
 Collections._containsRef = function(c, ref) {
@@ -352,7 +381,7 @@ Collections._containsRef = function(c, ref) {
 function HashMapImplementation() {}
 HashMapImplementation.prototype.is$Map = function(){return true};
 HashMapImplementation._computeLoadLimit = function(capacity) {
-  return $$truncdiv((capacity * (3)), (4));
+  return $truncdiv$((capacity * (3)), (4));
 }
 HashMapImplementation._firstProbe = function(hashCode, length) {
   return hashCode & (length - (1));
@@ -371,7 +400,7 @@ HashMapImplementation.prototype._probeForAdding = function(key) {
       if (insertionIndex < (0)) return hash;
       return insertionIndex;
     }
-    else if ($$eq(existingKey, key)) {
+    else if ($eq$(existingKey, key)) {
       return hash;
     }
     else if ((insertionIndex < (0)) && ((null == const$0001 ? null == (existingKey) : const$0001 === existingKey))) {
@@ -387,7 +416,7 @@ HashMapImplementation.prototype._probeForLookup = function(key) {
   while (true) {
     var existingKey = this._keys.$index(hash);
     if (null == existingKey) return (-1);
-    if ($$eq(existingKey, key)) return hash;
+    if ($eq$(existingKey, key)) return hash;
     hash = HashMapImplementation._nextProbe(hash, numberOfProbes++, this._keys.get$length());
   }
 }
@@ -639,7 +668,7 @@ StringBase.join = function(strings, separator) {
   var s = strings.$index((0));
   for (var i = (1);
    i < strings.get$length(); i++) {
-    s = $$add($$add(s, separator), strings.$index(i));
+    s = $add$($add$(s, separator), strings.$index(i));
   }
   return s;
 }
@@ -678,7 +707,6 @@ StringImplementation.prototype.hashCode = function() {
       hash ^= hash >> 11;
       return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
 }
-// ********** Code for _Worker **************
 // ********** Code for _ArgumentMismatchException **************
 $inherits(_ArgumentMismatchException, ClosureArgumentMismatchException);
 function _ArgumentMismatchException(_message) {
@@ -691,18 +719,19 @@ _ArgumentMismatchException.prototype.toString = function() {
 // ********** Code for _FunctionImplementation **************
 _FunctionImplementation = Function;
 _FunctionImplementation.prototype._genStub = function(argsLength, names) {
-      // Fast path #1: if no named arguments and arg count matches
-      if (this.length == argsLength && !names) {
+      // Fast path #1: if no named arguments and arg count matches.
+      var thisLength = this.$length || this.length;
+      if (thisLength == argsLength && !names) {
         return this;
       }
 
       var paramsNamed = this.$optional ? (this.$optional.length / 2) : 0;
-      var paramsBare = this.length - paramsNamed;
+      var paramsBare = thisLength - paramsNamed;
       var argsNamed = names ? names.length : 0;
       var argsBare = argsLength - argsNamed;
 
       // Check we got the right number of arguments
-      if (argsBare < paramsBare || argsLength > this.length ||
+      if (argsBare < paramsBare || argsLength > thisLength ||
           argsNamed > paramsNamed) {
         return function() {
           $throw(new _ArgumentMismatchException(
@@ -743,7 +772,7 @@ _FunctionImplementation.prototype._genStub = function(argsLength, names) {
         lastParameterIndex = j;
       }
 
-      if (this.length == argsLength && namesInOrder) {
+      if (thisLength == argsLength && namesInOrder) {
         // Fast path #2: named arguments, but they're in order and all supplied.
         return this;
       }
@@ -901,6 +930,7 @@ $dynamic("add$1").DataTransferItemList = function($0) {
 // ********** Code for _WorkerContextJs **************
 // ********** Code for _DedicatedWorkerContextJs **************
 // ********** Code for _DelayNodeJs **************
+// ********** Code for _DeprecatedPeerConnectionJs **************
 // ********** Code for _DeviceMotionEventJs **************
 // ********** Code for _DeviceOrientationEventJs **************
 // ********** Code for _EntryJs **************
@@ -913,6 +943,7 @@ $dynamic("add$1").DataTransferItemList = function($0) {
 // ********** Code for _DocumentFragmentJs **************
 // ********** Code for _DocumentTypeJs **************
 // ********** Code for _DynamicsCompressorNodeJs **************
+// ********** Code for _EXTTextureFilterAnisotropicJs **************
 // ********** Code for _ElementJs **************
 // ********** Code for _ElementTimeControlJs **************
 // ********** Code for _ElementTraversalJs **************
@@ -1248,7 +1279,6 @@ $dynamic("add$1").NodeList = function($0) {
 // ********** Code for _OperationNotAllowedExceptionJs **************
 // ********** Code for _OverflowEventJs **************
 // ********** Code for _PageTransitionEventJs **************
-// ********** Code for _PeerConnectionJs **************
 // ********** Code for _PerformanceJs **************
 // ********** Code for _PerformanceNavigationJs **************
 // ********** Code for _PerformanceTimingJs **************
@@ -1425,9 +1455,16 @@ $dynamic("add$1").NodeList = function($0) {
 // ********** Code for _ShadowRootJs **************
 // ********** Code for _SharedWorkerJs **************
 // ********** Code for _SharedWorkerContextJs **************
+// ********** Code for _SpeechGrammarJs **************
+// ********** Code for _SpeechGrammarListJs **************
 // ********** Code for _SpeechInputEventJs **************
 // ********** Code for _SpeechInputResultJs **************
 // ********** Code for _SpeechInputResultListJs **************
+// ********** Code for _SpeechRecognitionAlternativeJs **************
+// ********** Code for _SpeechRecognitionErrorJs **************
+// ********** Code for _SpeechRecognitionEventJs **************
+// ********** Code for _SpeechRecognitionResultJs **************
+// ********** Code for _SpeechRecognitionResultListJs **************
 // ********** Code for _StorageJs **************
 // ********** Code for _StorageEventJs **************
 // ********** Code for _StorageInfoJs **************
@@ -1595,6 +1632,8 @@ $dynamic("is$Collection").Uint8ClampedArray = function(){return true};
 function _DOMParserFactoryProvider() {}
 // ********** Code for _DOMURLFactoryProvider **************
 function _DOMURLFactoryProvider() {}
+// ********** Code for _DeprecatedPeerConnectionFactoryProvider **************
+function _DeprecatedPeerConnectionFactoryProvider() {}
 // ********** Code for _EventSourceFactoryProvider **************
 function _EventSourceFactoryProvider() {}
 // ********** Code for _FileReaderFactoryProvider **************
@@ -1611,12 +1650,14 @@ function _MediaControllerFactoryProvider() {}
 function _MediaStreamFactoryProvider() {}
 // ********** Code for _MessageChannelFactoryProvider **************
 function _MessageChannelFactoryProvider() {}
-// ********** Code for _PeerConnectionFactoryProvider **************
-function _PeerConnectionFactoryProvider() {}
 // ********** Code for _ShadowRootFactoryProvider **************
 function _ShadowRootFactoryProvider() {}
 // ********** Code for _SharedWorkerFactoryProvider **************
 function _SharedWorkerFactoryProvider() {}
+// ********** Code for _SpeechGrammarFactoryProvider **************
+function _SpeechGrammarFactoryProvider() {}
+// ********** Code for _SpeechGrammarListFactoryProvider **************
+function _SpeechGrammarListFactoryProvider() {}
 // ********** Code for _TextTrackCueFactoryProvider **************
 function _TextTrackCueFactoryProvider() {}
 // ********** Code for _WebKitBlobBuilderFactoryProvider **************
@@ -1635,6 +1676,8 @@ function _XPathEvaluatorFactoryProvider() {}
 function _XSLTProcessorFactoryProvider() {}
 // ********** Code for _Collections **************
 function _Collections() {}
+// ********** Code for _DOMWindowCrossFrameImpl **************
+function _DOMWindowCrossFrameImpl() {}
 // ********** Code for _AudioContextFactoryProvider **************
 function _AudioContextFactoryProvider() {}
 // ********** Code for _TypedArrayFactoryProvider **************
@@ -1735,7 +1778,7 @@ function _FixedSizeListIterator_dom_Touch(array) {
 // ********** Code for _Lists **************
 function _Lists() {}
 // ********** Code for top level **************
-function get$document() {
+function get$$document() {
   return window.document;
 }
 //  ********** Library puremvc **************
@@ -1753,8 +1796,8 @@ MVCObserver.prototype.notifyObserver = function(notification) {
 // ********** Code for MVCNotification **************
 function MVCNotification(name, body, type) {
   this.name = name;
-  this.type = type;
   this.body = body;
+  this.type = type;
 }
 MVCNotification.prototype.getName = function() {
   return this.name;
@@ -1819,18 +1862,24 @@ MVCMediator.prototype.get$handleNotification = function() {
 Function.prototype.bind = Function.prototype.bind ||
   function(thisObj) {
     var func = this;
-    if (arguments.length > 1) {
+    var funcLength = func.$length || func.length;
+    var argsLength = arguments.length;
+    if (argsLength > 1) {
       var boundArgs = Array.prototype.slice.call(arguments, 1);
-      return function() {
+      var bound = function() {
         // Prepend the bound arguments to the current arguments.
         var newArgs = Array.prototype.slice.call(arguments);
         Array.prototype.unshift.apply(newArgs, boundArgs);
         return func.apply(thisObj, newArgs);
       };
+      bound.$length = Math.max(0, funcLength - (argsLength - 1));
+      return bound;
     } else {
-      return function() {
+      var bound = function() {
         return func.apply(thisObj, arguments);
       };
+      bound.$length = funcLength;
+      return bound;
     }
   };
 MVCMediator.prototype.onRegister = function() {
@@ -1854,21 +1903,21 @@ function MVCMacroCommand() {
 MVCMacroCommand.prototype.initializeMacroCommand = function() {
 
 }
-MVCMacroCommand.prototype.addSubCommand = function(commandClassRef) {
-  this.subCommands.add(commandClassRef);
+MVCMacroCommand.prototype.addSubCommand = function(commandFactory) {
+  this.subCommands.add(commandFactory);
 }
 MVCMacroCommand.prototype.execute = function(note) {
   var $$list = this.subCommands;
   for (var $$i = $$list.iterator(); $$i.hasNext(); ) {
-    var commandClassRef = $$i.next();
-    var commandInstance = commandClassRef.call$0();
+    var commandFactory = $$i.next();
+    var commandInstance = commandFactory.call$0();
     commandInstance.initializeNotifier(this.multitonKey);
     commandInstance.execute(note);
   }
 }
 // ********** Code for MVCFacade **************
 function MVCFacade(key) {
-  if ($$ne($globals.MVCFacade_instanceMap.$index(key))) $throw(new FacadeExistsError());
+  if ($ne$($globals.MVCFacade_instanceMap.$index(key))) $throw(new MultitonFacadeExistsError());
   this.initializeNotifier(key);
   $globals.MVCFacade_instanceMap.$setindex(this.multitonKey, this);
   this.initializeFacade();
@@ -1879,8 +1928,9 @@ MVCFacade.prototype.initializeFacade = function() {
   this.initializeView();
 }
 MVCFacade.getInstance = function(key) {
+  if (key == null || key == "") return null;
   if ($globals.MVCFacade_instanceMap == null) $globals.MVCFacade_instanceMap = new HashMapImplementation_dart_core_String$IFacade();
-  if ($$eq($globals.MVCFacade_instanceMap.$index(key))) $globals.MVCFacade_instanceMap.$setindex(key, new MVCFacade(key));
+  if ($eq$($globals.MVCFacade_instanceMap.$index(key))) $globals.MVCFacade_instanceMap.$setindex(key, new MVCFacade(key));
   return $globals.MVCFacade_instanceMap.$index(key);
 }
 MVCFacade.prototype.initializeController = function() {
@@ -1895,8 +1945,8 @@ MVCFacade.prototype.initializeView = function() {
   if (this.view != null) return;
   this.view = MVCView.getInstance(this.multitonKey);
 }
-MVCFacade.prototype.registerCommand = function(noteName, commandClassRef) {
-  this.controller.registerCommand(noteName, commandClassRef);
+MVCFacade.prototype.registerCommand = function(noteName, commandFactory) {
+  this.controller.registerCommand(noteName, commandFactory);
 }
 MVCFacade.prototype.registerProxy = function(proxy) {
   this.model.registerProxy(proxy);
@@ -1917,16 +1967,16 @@ MVCFacade.prototype.initializeNotifier = function(key) {
   this.multitonKey = key;
 }
 MVCFacade.prototype.sendNotification$1 = MVCFacade.prototype.sendNotification;
-// ********** Code for FacadeExistsError **************
-function FacadeExistsError() {
+// ********** Code for MultitonFacadeExistsError **************
+function MultitonFacadeExistsError() {
 
 }
-FacadeExistsError.prototype.toString = function() {
-  return "Facade instance for this Multiton key already constructed!";
+MultitonFacadeExistsError.prototype.toString = function() {
+  return "IFacade Multiton instance already constructed for this key.";
 }
 // ********** Code for MVCModel **************
 function MVCModel(key) {
-  if ($$ne($globals.MVCModel_instanceMap.$index(key))) $throw(new ModelExistsError());
+  if ($ne$($globals.MVCModel_instanceMap.$index(key))) $throw(new MultitonModelExistsError());
   this.multitonKey = key;
   $globals.MVCModel_instanceMap.$setindex(this.multitonKey, this);
   this.proxyMap = new HashMapImplementation_dart_core_String$IProxy();
@@ -1936,8 +1986,9 @@ MVCModel.prototype.initializeModel = function() {
 
 }
 MVCModel.getInstance = function(key) {
+  if (key == null || key == "") return null;
   if ($globals.MVCModel_instanceMap == null) $globals.MVCModel_instanceMap = new HashMapImplementation_dart_core_String$IModel();
-  if ($$eq($globals.MVCModel_instanceMap.$index(key))) $globals.MVCModel_instanceMap.$setindex(key, new MVCModel(key));
+  if ($eq$($globals.MVCModel_instanceMap.$index(key))) $globals.MVCModel_instanceMap.$setindex(key, new MVCModel(key));
   return $globals.MVCModel_instanceMap.$index(key);
 }
 MVCModel.prototype.registerProxy = function(proxy) {
@@ -1948,16 +1999,16 @@ MVCModel.prototype.registerProxy = function(proxy) {
 MVCModel.prototype.retrieveProxy = function(proxyName) {
   return this.proxyMap.$index(proxyName);
 }
-// ********** Code for ModelExistsError **************
-function ModelExistsError() {
+// ********** Code for MultitonModelExistsError **************
+function MultitonModelExistsError() {
 
 }
-ModelExistsError.prototype.toString = function() {
-  return "Model instance for this Multiton key already constructed!";
+MultitonModelExistsError.prototype.toString = function() {
+  return "IModel Multiton instance already constructed for this key.";
 }
 // ********** Code for MVCView **************
 function MVCView(key) {
-  if ($$ne($globals.MVCView_instanceMap.$index(key))) $throw(new ViewExistsError());
+  if ($ne$($globals.MVCView_instanceMap.$index(key))) $throw(new MultitonViewExistsError());
   this.multitonKey = key;
   $globals.MVCView_instanceMap.$setindex(this.multitonKey, this);
   this.mediatorMap = new HashMapImplementation_dart_core_String$IMediator();
@@ -1968,12 +2019,13 @@ MVCView.prototype.initializeView = function() {
 
 }
 MVCView.getInstance = function(key) {
+  if (key == null || key == "") return null;
   if ($globals.MVCView_instanceMap == null) $globals.MVCView_instanceMap = new HashMapImplementation_dart_core_String$IView();
-  if ($$eq($globals.MVCView_instanceMap.$index(key))) $globals.MVCView_instanceMap.$setindex(key, new MVCView(key));
+  if ($eq$($globals.MVCView_instanceMap.$index(key))) $globals.MVCView_instanceMap.$setindex(key, new MVCView(key));
   return $globals.MVCView_instanceMap.$index(key);
 }
 MVCView.prototype.registerObserver = function(noteName, observer) {
-  if ($$eq(this.observerMap.$index(noteName))) {
+  if ($eq$(this.observerMap.$index(noteName))) {
     this.observerMap.$setindex(noteName, new Array());
   }
   this.observerMap.$index(noteName).add$1(observer);
@@ -1984,41 +2036,41 @@ MVCView.prototype.notifyObservers = function(note) {
     var observers = new Array();
     var observer;
     for (var i = (0);
-     $$lt(i, observers_ref.get$length()); i = $$add(i, (1))) {
+     $lt$(i, observers_ref.get$length()); i = $add$(i, (1))) {
       observer = observers_ref.$index(i);
       observers.add(observer);
     }
     for (var i = (0);
-     $$lt(i, observers.get$length()); i = $$add(i, (1))) {
+     $lt$(i, observers.get$length()); i = $add$(i, (1))) {
       observer = observers.$index(i);
       observer.notifyObserver(note);
     }
   }
 }
 MVCView.prototype.registerMediator = function(mediator) {
-  if ($$ne(this.mediatorMap.$index(mediator.getName()))) return;
+  if ($ne$(this.mediatorMap.$index(mediator.getName()))) return;
   mediator.initializeNotifier(this.multitonKey);
   this.mediatorMap.$setindex(mediator.getName(), mediator);
   var interests = mediator.listNotificationInterests();
   if (interests.get$length() > (0)) {
     var observer = new MVCObserver(mediator.get$handleNotification(), mediator);
     for (var i = (0);
-     $$lt(i, interests.get$length()); i = $$add(i, (1))) {
+     $lt$(i, interests.get$length()); i = $add$(i, (1))) {
       this.registerObserver(interests.$index(i), observer);
     }
   }
   mediator.onRegister();
 }
-// ********** Code for ViewExistsError **************
-function ViewExistsError() {
+// ********** Code for MultitonViewExistsError **************
+function MultitonViewExistsError() {
 
 }
-ViewExistsError.prototype.toString = function() {
-  return "View instance for this Multiton key already constructed!";
+MultitonViewExistsError.prototype.toString = function() {
+  return "IViewMultiton instance already constructed for this key.";
 }
 // ********** Code for MVCController **************
 function MVCController(key) {
-  if ($$ne($globals.MVCController_instanceMap.$index(key))) $throw(new ControllerExistsError());
+  if ($ne$($globals.MVCController_instanceMap.$index(key))) $throw(new MultitonControllerExistsError());
   this.multitonKey = key;
   $globals.MVCController_instanceMap.$setindex(this.multitonKey, this);
   this.commandMap = new HashMapImplementation_dart_core_String$dart_core_Function();
@@ -2028,32 +2080,33 @@ MVCController.prototype.initializeController = function() {
   this.view = MVCView.getInstance(this.multitonKey);
 }
 MVCController.getInstance = function(key) {
+  if (key == null || key == "") return null;
   if ($globals.MVCController_instanceMap == null) $globals.MVCController_instanceMap = new HashMapImplementation_dart_core_String$IController();
-  if ($$eq($globals.MVCController_instanceMap.$index(key))) $globals.MVCController_instanceMap.$setindex(key, new MVCController(key));
+  if ($eq$($globals.MVCController_instanceMap.$index(key))) $globals.MVCController_instanceMap.$setindex(key, new MVCController(key));
   return $globals.MVCController_instanceMap.$index(key);
 }
 MVCController.prototype.executeCommand = function(note) {
-  var commandClassRef = this.commandMap.$index(note.getName());
-  if (commandClassRef == null) return;
-  var commandInstance = commandClassRef.call$0();
+  var commandFactory = this.commandMap.$index(note.getName());
+  if (commandFactory == null) return;
+  var commandInstance = commandFactory.call$0();
   commandInstance.initializeNotifier(this.multitonKey);
   commandInstance.execute(note);
 }
 MVCController.prototype.get$executeCommand = function() {
   return this.executeCommand.bind(this);
 }
-MVCController.prototype.registerCommand = function(notificationName, commandClassRef) {
-  if ($$eq(this.commandMap.$index(notificationName))) {
-    this.view.registerObserver(notificationName, new MVCObserver(this.get$executeCommand(), this));
+MVCController.prototype.registerCommand = function(noteName, commandFactory) {
+  if ($eq$(this.commandMap.$index(noteName))) {
+    this.view.registerObserver(noteName, new MVCObserver(this.get$executeCommand(), this));
   }
-  this.commandMap.$setindex(notificationName, commandClassRef);
+  this.commandMap.$setindex(noteName, commandFactory);
 }
-// ********** Code for ControllerExistsError **************
-function ControllerExistsError() {
+// ********** Code for MultitonControllerExistsError **************
+function MultitonControllerExistsError() {
 
 }
-ControllerExistsError.prototype.toString = function() {
-  return "Controller instance for this Multiton key already constructed!";
+MultitonControllerExistsError.prototype.toString = function() {
+  return "IController Multiton instance already constructed for this key.";
 }
 // ********** Code for top level **************
 //  ********** Library Z:\Outgoing\workspaces\FB3\PureMVC\Demo_Dart_ReverseText\Demo_Dart_ReverseText **************
@@ -2071,7 +2124,7 @@ TextProxy.prototype.set$text = function(t) {
 }
 // ********** Code for TextComponent **************
 function TextComponent() {
-  this.textForm = get$document().querySelector("#textForm");
+  this.textForm = get$$document().querySelector("#textForm");
   this.textInput = this.textForm.querySelector("#inputText");
   this.textOutput = this.textForm.querySelector("#outputText");
   this.textOutputLabel = this.textForm.querySelector("#outputTextLabel");
@@ -2106,7 +2159,7 @@ TextComponent.prototype.addEventListener = function(type, listener) {
   this.textForm.addEventListener(type, listener);
 }
 TextComponent.prototype.dispatchTextChangedEvent = function() {
-  var event = get$document().createEvent("HTMLEvents");
+  var event = get$$document().createEvent("HTMLEvents");
   event.initEvent("text/changed", true, true);
   this.textForm.dispatchEvent(event);
 }
